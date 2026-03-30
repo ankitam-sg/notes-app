@@ -82,8 +82,30 @@ export default function Signup() {
 
         if (isValid) {
             // Save user in localStorage
-            const storedUsers = JSON.parse(localStorage.getItem("users") || "[]");
-            storedUsers.push({ email: formData.email, password: formData.password });
+            const storedUsersRaw = localStorage.getItem("users");
+            const storedUsers = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+
+            if (!Array.isArray(storedUsers)) {
+                console.error("Users are corrupted: ", storedUsers);
+                return;
+            }
+
+            // Check if User already exists
+            const userExists = storedUsers.find(
+                (user: {email: string}) => user.email === formData.email
+            );
+
+            if (userExists) {
+                setErrors((prev) => ({
+                    ...prev,
+                    email: "User already exists with this email.",
+                }));
+
+                return;
+            }
+
+            // Store new user
+            storedUsers.push({email: formData.email, password: formData.password});
             localStorage.setItem("users", JSON.stringify(storedUsers));
 
             // Fake token + current user
@@ -149,7 +171,7 @@ export default function Signup() {
                     Already have an account?{" "}
                     <Link
                         to="/login"
-                        className="text-blue-500 hover:text-blue-700 underline cursor-pointer"
+                        className="text-blue-600 hover:text-blue-600 hover:font-semibold underline cursor-pointer"
                     >
                         Login
                     </Link>

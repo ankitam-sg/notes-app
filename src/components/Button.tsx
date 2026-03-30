@@ -6,23 +6,31 @@ type ButtonProps = {
     type?: "button" | "submit" | "reset";
     onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
     disabled?: boolean;
+    variant?: "primary" | "danger";
 };
 
 export default function Button({
     text,
     type = "button",
     onClick,
-    disabled = false
+    disabled = false,
+    variant = "primary"
     }: ButtonProps) {
+        const baseStyle = "w-full p-2 rounded-md text-white";
+
+        const variants = {
+            primary: "bg-blue-500 hover:bg-blue-600",
+            danger: "bg-red-500 hover:bg-red-600"
+        }
     return (
         <button 
             type={type} 
             onClick={onClick}
             disabled={disabled}
-            className={`w-full p-2 rounded-md text-white ${
+            className= { `${baseStyle} ${
                 disabled
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600"
+                : variants[variant]
             }`}
         >
             {text}

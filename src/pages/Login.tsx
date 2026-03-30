@@ -2,6 +2,7 @@ import { useState, ChangeEvent, SyntheticEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
+import { auth } from "../utils/auth";
 
 // Define the shape of the form data
 type LoginForm = {
@@ -80,13 +81,36 @@ export default function Login() {
         if (isValid) {
             console.log("Login data:", formData.email, formData.password);
 
-            // Fake auto-login
-            const fakeToken = Math.random().toString(36).substring(2);
-            localStorage.setItem("authToken", fakeToken);
-            localStorage.setItem(
-                "currentUser",
-                JSON.stringify({ email: formData.email })
+            const storedUsers = JSON.parse(localStorage.getItem("users") || "[]");
+
+            // Find User by email
+            const user = storedUsers.find(
+                (u: { email: string, password: string}) =>
+                    u.email === formData.email
             );
+
+            // User not found
+            if (!user) {
+                setErrors((prev) => ({
+                    ...prev,
+                    email: "User not found. Please Sign up first.",
+                }));
+
+                return;
+            }
+
+            // ❌ WRONG Password
+            if (user.password !== formData.password) {
+                setErrors((prev) => ({
+                    ...prev,
+                    password: "Incorrect Password.",
+                }));
+
+                return;
+            }
+
+            // ✅ SUCCESS LOGIN
+            auth.login(user);
 
             // Reset form
             setFormData(initialForm);
@@ -134,7 +158,7 @@ export default function Login() {
                     Don't have an account?{" "}
                     <Link
                         to="/signup"
-                        className="text-blue-500 hover:text-blue-700 underline cursor-pointer"
+                        className="text-blue-600 hover:text-blue-600 hover:font-semibold underline cursor-pointer"
                     >
                         Sign Up
                     </Link>
