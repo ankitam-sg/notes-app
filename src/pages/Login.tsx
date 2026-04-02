@@ -123,7 +123,7 @@ export default function Login() {
 
     return (
         <div className="h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white p-6 rounded-lg shadow-md w-80">
+            <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">
                 <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
@@ -151,7 +151,7 @@ export default function Login() {
                         error={touched.password ? errors.password : undefined}
                     />
 
-                    <Button text="Login" type="submit" />
+                    <Button text="Login" variant="primary" type="submit" className="w-full"/>
                 </form>
 
                 <p className="text-center text-sm mt-2">

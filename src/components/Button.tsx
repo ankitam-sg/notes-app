@@ -1,12 +1,13 @@
 import { MouseEvent, ReactNode, useState } from "react";
 
 type ButtonProps = {
-    text: string;
+    text?: string;
     type?: "button" | "submit" | "reset";
     onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
     disabled?: boolean;
-    variant: "primary" | "danger" | "success";
+    variant: "primary" | "danger" | "success" | "secondary";
     icon?: ReactNode;
+    className?: string;
 };
 
 export default function Button({
@@ -15,9 +16,12 @@ export default function Button({
     onClick,
     disabled = false,
     variant,
-    icon
+    icon,
+    className = ""
 }: ButtonProps) {
-    const isIconOnly = Boolean(icon);
+
+    // 👉 FIX: icon hai to icon-only treat kar
+    const isIconOnly = !!icon;
 
     const [hover, setHover] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -30,20 +34,23 @@ export default function Button({
     };
 
     // Base: padding, width, flex alignment -> same for all states
-    const base = "flex items-center justify-center rounded-md transition-all duration-200 px-4 py-2 min-w-[40px]";
+    const base =
+        "flex items-center justify-center rounded-md transition-all duration-200 px-4 py-2";
 
-    // Variants: color + hover color
+        
+        
+// Variants: color + hover color
     const variants = {
         primary: "bg-blue-600 hover:bg-blue-700 text-white",
         danger: "bg-red-600 hover:bg-red-700 text-white",
-        success: "bg-green-600 hover:bg-green-700 text-white"
+        success: "bg-green-600 hover:bg-green-700 text-white",
+        secondary: "bg-gray-600 hover:bg-gray-700 text-white"
     };
 
-    // Disabled: overrides only color + cursor + opacity
-    const disabledStyle = "bg-gray-400 text-white cursor-not-allowed opacity-50";
-
-    // Icon-only buttons padding override (optional)
-    const iconPadding = "p-2";
+    
+// Disabled: overrides only color + cursor + opacity
+    const disabledStyle =
+        "bg-gray-400 text-white cursor-not-allowed opacity-50";
 
     return (
         <>
@@ -55,18 +62,19 @@ export default function Button({
                 onMouseLeave={() => setHover(false)}
                 onMouseMove={handleMouseMove}
                 className={`${base} ${
-                    disabled
-                        ? disabledStyle
-                        : isIconOnly
-                        ? `${variants[variant]} ${iconPadding}`
-                        : variants[variant]
-                }`}
+                    disabled ? disabledStyle : variants[variant]
+                } ${isIconOnly ? "p-2" : ""} ${className}`}
             >
-                {isIconOnly ? icon : text}
+                {/* ✅ FIXED LOGIC */}
+                {isIconOnly ? (
+                    icon
+                ) : (
+                    text
+                )}
             </button>
 
-            {/* Tooltip for icon-only buttons */}
-            {isIconOnly && hover && (
+            {/* ✅ Tooltip only for icon buttons */}
+            {isIconOnly && hover && text && (
                 <span
                     className="fixed z-50 bg-black text-white text-xs px-2 py-1 rounded-md whitespace-nowrap pointer-events-none"
                     style={{

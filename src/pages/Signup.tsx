@@ -124,7 +124,7 @@ export default function Signup() {
 
     return (
         <div className="h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white p-6 rounded-lg shadow-md w-80">
+            <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">
                 <h2 className="text-2xl font-bold mb-4 text-center">Sign Up</h2>
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
@@ -164,7 +164,7 @@ export default function Signup() {
                         error={touched.confirmPassword ? errors.confirmPassword : undefined}
                     />
 
-                    <Button text="Sign Up" type="submit" />
+                    <Button text="Sign Up" variant="primary" type="submit" className="w-full" />
                 </form>
 
                 <p className="text-center text-sm mt-2">
