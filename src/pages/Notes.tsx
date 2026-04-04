@@ -23,6 +23,7 @@ export default function Notes() {
     const [content, setContent] = useState("");
     const [originalNote, setOriginalNote] = useState<Note | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     // modal & pending state
     const [modalOpen, setModalOpen] = useState(false);
@@ -120,6 +121,18 @@ export default function Notes() {
         setIsCreating(false);
     };
 
+    // 🔍 filter notes based on search (title + content, case-insensitive)
+    const filteredNotes = notes.filter((note) => {
+        if (!searchQuery.trim()) return true;
+
+        const query = searchQuery.toLowerCase();
+
+        return (
+            note.title.toLowerCase().includes(query) ||
+            note.content.toLowerCase().includes(query)
+        );
+    });
+
     return (
         <div className="h-screen flex flex-col bg-gray-900 text-white overflow-hidden">
             {/* HEADER */}
@@ -146,6 +159,8 @@ export default function Notes() {
                         <input
                             type="text"
                             placeholder="Search..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="flex-1 min-w-0 bg-gray-800 border border-gray-600 text-white placeholder-gray-400 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
 
@@ -158,10 +173,14 @@ export default function Notes() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-2">
-                        {notes.length === 0 ? (
-                            <p className="text-sm text-gray-400">No notes yet</p>
+                        {filteredNotes.length === 0 ? (
+                            searchQuery.trim() ? (
+                                <p className="text-sm text-gray-400">No notes match your search</p>
+                            ) : (
+                                <p className="text-sm text-gray-400">No notes yet</p>
+                            )
                         ) : (
-                            notes.map((note) => (
+                            filteredNotes.map((note) => (
                                 <NoteListItem
                                     key={note.id}
                                     note={note}
