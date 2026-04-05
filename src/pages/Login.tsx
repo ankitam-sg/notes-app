@@ -1,7 +1,7 @@
 import { useState, ChangeEvent, SyntheticEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import InputField from "../components/InputField";
-import Button from "../components/Button";
+import InputField from "../shared/InputField";
+import Button from "../shared/Button";
 import { auth } from "../utils/auth";
 
 // Define the shape of the form data

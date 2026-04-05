@@ -4,11 +4,15 @@ import { auth } from "../utils/auth";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRightFromBracket, faPlus } from "@fortawesome/free-solid-svg-icons";
+import Button from "../shared/Button";
+import NoteListItem from "../features/notes/ui/NoteListItem";
+import NoteEditor from "../features/notes/ui/NoteEditor";
+import Modal from "../shared/Modal";
 
-import Button from "../components/Button";
-import NoteListItem from "../components/NoteListItem";
-import NoteEditor from "../components/NoteEditor";
-import Modal from "../components/Modal";
+// import Button from "../components/Button";
+// import NoteListItem from "../components/NoteListItem";
+// import NoteEditor from "../components/NoteEditor";
+// import Modal from "../components/Modal";
 
 type Note = {
     id: string;

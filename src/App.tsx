@@ -2,8 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Notes from "./pages/Notes";
-import ProtectedRoutes from "./components/ProtectedRoute";
-import PublicRoute from "./components/PublicRoute";
+import ProtectedRoutes from "./guards/ProtectedRoute";
+import PublicRoute from "./guards/PublicRoute";
 
 export default function App() {
   return (
