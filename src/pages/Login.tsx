@@ -1,8 +1,10 @@
 import { useState, ChangeEvent, SyntheticEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+
+import { login as loginAction } from "../features/auth/authSlice";
 import InputField from "../shared/InputField";
 import Button from "../shared/Button";
-import { auth } from "../utils/auth";
 
 // Define the shape of the form data
 type LoginForm = {
@@ -31,6 +33,7 @@ export default function Login() {
     const [touched, setTouched] = useState<FormTouched>(initialTouched);
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     // Validation rules for each field
     const validationRules: { [K in keyof LoginForm]: ((value: string) => string)[] } = {
@@ -79,38 +82,7 @@ export default function Login() {
         const isValid = Object.values(newErrors).every((err) => err === "");
 
         if (isValid) {
-            console.log("Login data:", formData.email, formData.password);
-
-            const storedUsers = JSON.parse(localStorage.getItem("users") || "[]");
-
-            // Find User by email
-            const user = storedUsers.find(
-                (u: { email: string, password: string}) =>
-                    u.email === formData.email
-            );
-
-            // User not found
-            if (!user) {
-                setErrors((prev) => ({
-                    ...prev,
-                    email: "User not found. Please Sign up first.",
-                }));
-
-                return;
-            }
-
-            // ❌ WRONG Password
-            if (user.password !== formData.password) {
-                setErrors((prev) => ({
-                    ...prev,
-                    password: "Incorrect Password.",
-                }));
-
-                return;
-            }
-
-            // ✅ SUCCESS LOGIN
-            auth.login(user);
+            dispatch(loginAction({ email: formData.email }));
 
             // Reset form
             setFormData(initialForm);

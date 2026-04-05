@@ -37,18 +37,15 @@ export default function Button({
     const base =
         "flex items-center justify-center rounded-md transition-all duration-200 px-4 py-2";
 
-        
-        
-// Variants: color + hover color
+    // Variants: color + hover color
     const variants = {
         primary: "bg-blue-600 hover:bg-blue-700 text-white",
         danger: "bg-red-600 hover:bg-red-700 text-white",
         success: "bg-green-600 hover:bg-green-700 text-white",
         secondary: "bg-gray-600 hover:bg-gray-700 text-white"
     };
-
     
-// Disabled: overrides only color + cursor + opacity
+    // Disabled: overrides only color + cursor + opacity
     const disabledStyle =
         "bg-gray-400 text-white cursor-not-allowed opacity-50";
 

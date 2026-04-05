@@ -1,18 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../utils/auth";
+import { useDispatch, useSelector } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRightFromBracket, faPlus } from "@fortawesome/free-solid-svg-icons";
+
 import Button from "../shared/Button";
 import NoteListItem from "../features/notes/ui/NoteListItem";
 import NoteEditor from "../features/notes/ui/NoteEditor";
 import Modal from "../shared/Modal";
 
-// import Button from "../components/Button";
-// import NoteListItem from "../components/NoteListItem";
-// import NoteEditor from "../components/NoteEditor";
-// import Modal from "../components/Modal";
+import { RootState } from "../store/store";
+import { addNote, updateNote, deleteNote, setSearchTerm } from "../features/notes/notesSlice";
+import { logout } from "../features/auth/authSlice";
 
 type Note = {
     id: string;
@@ -21,28 +21,31 @@ type Note = {
 };
 
 export default function Notes() {
-    const [notes, setNotes] = useState<Note[]>([]);
+    const notes = useSelector((state: RootState) => state.notes.notes);
+    const searchTerm = useSelector((state: RootState) => state.notes.searchTerm);
+    
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const user = useSelector((state: RootState) => state.auth.user);
+
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [originalNote, setOriginalNote] = useState<Note | null>(null);
     const [isCreating, setIsCreating] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
 
     // modal & pending state
     const [modalOpen, setModalOpen] = useState(false);
     const [pendingSelection, setPendingSelection] = useState<Note | null>(null);
     const [pendingDelete, setPendingDelete] = useState(false);
 
-    const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-
+    // Logout
     const handleLogout = () => {
-        auth.logout();
+        dispatch(logout());
         navigate("/login", { replace: true });
     };
 
-    // 🚀 check if current note has unsaved changes
+    // Unsaved changes check for both new and existing notes
     const hasUnsavedChanges = () => {
         if (!originalNote) {
             return title.trim() !== "" || content.trim() !== "";
@@ -50,7 +53,7 @@ export default function Notes() {
         return title !== originalNote.title || content !== originalNote.content;
     };
 
-    // 🚀 safely select note, show modal if unsaved changes
+    // Safe note selection with modal if unsaved changes 
     const selectNoteSafely = (note: Note | null) => {
         if (hasUnsavedChanges()) {
             setPendingSelection(note);
@@ -77,19 +80,14 @@ export default function Notes() {
         }
     };
 
-    const handleNewNote = () => {
-        selectNoteSafely(null);
-    };
-
+    const handleNewNote = () => selectNoteSafely(null);
+    
     const handleSave = () => {
         if (!title.trim() && !content.trim()) return;
 
         if (selectedNoteId) {
             // UPDATE
-            setNotes((prev) =>
-                prev.map((note) =>
-                note.id === selectedNoteId ? { ...note, title, content } : note     
-        ));
+            dispatch(updateNote({ id: selectedNoteId, title, content }));
             setOriginalNote({ id: selectedNoteId, title, content });
         } else {
             // CREATE
@@ -98,7 +96,7 @@ export default function Notes() {
                 title,
                 content
             };
-            setNotes((prev) => [newNote, ...prev]);
+            dispatch(addNote(newNote));
         }
 
         handleClose();
@@ -125,18 +123,23 @@ export default function Notes() {
         setIsCreating(false);
     };
 
-    // 🔍 filter notes based on search (title + content, case-insensitive)
-    const filteredNotes = notes.filter((note) => {
-        if (!searchQuery.trim()) return true;
+    // Search Input Handler
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        dispatch(setSearchTerm(e.target.value));
+    };
 
-        const query = searchQuery.toLowerCase();
+    // Filter notes (case-insensitive, title / content)
+    const filteredNotes = useMemo(() => {
+        if (!searchTerm.trim()) return notes;
 
-        return (
-            note.title.toLowerCase().includes(query) ||
-            note.content.toLowerCase().includes(query)
+        const lowerSearch = searchTerm.toLowerCase();
+        return notes.filter(
+            (note) =>
+                note.title.toLowerCase().includes(lowerSearch) ||
+                note.content.toLowerCase().includes(lowerSearch)
         );
-    });
-
+    }, [notes, searchTerm]);
+        
     return (
         <div className="h-screen flex flex-col bg-gray-900 text-white overflow-hidden">
             {/* HEADER */}
@@ -144,7 +147,7 @@ export default function Notes() {
                 <h1 className="text-lg font-semibold text-gray-800">Notes App</h1>
 
                 <div className="flex items-center gap-3 min-w-0">
-                    <p className="text-sm text-gray-700 whitespace-nowrap">{user.email}</p>
+                    <p className="text-sm text-gray-700 whitespace-nowrap">{user?.email}</p>
 
                     <Button
                         text="Logout"
@@ -163,8 +166,8 @@ export default function Notes() {
                         <input
                             type="text"
                             placeholder="Search..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            value={searchTerm}
+                            onChange={handleSearchChange}
                             className="flex-1 min-w-0 bg-gray-800 border border-gray-600 text-white placeholder-gray-400 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
 
@@ -177,12 +180,10 @@ export default function Notes() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-2">
-                        {filteredNotes.length === 0 ? (
-                            searchQuery.trim() ? (
-                                <p className="text-sm text-gray-400">No notes match your search</p>
-                            ) : (
-                                <p className="text-sm text-gray-400">No notes yet</p>
-                            )
+                        {searchTerm.trim() && filteredNotes.length === 0 ? (
+                            <p className="text-sm text-gray-400">No notes match your search</p>
+                        ) : notes.length === 0 ? (
+                            <p className="text-sm text-gray-400">No notes yet</p>
                         ) : (
                             filteredNotes.map((note) => (
                                 <NoteListItem
@@ -242,7 +243,7 @@ export default function Notes() {
                 onConfirm={() => {
                     if (pendingDelete && selectedNoteId) {
                         // delete existing note
-                        setNotes((prev) => prev.filter((note) => note.id !== selectedNoteId));
+                        dispatch(deleteNote(selectedNoteId));
                     }
                     applySelection(pendingSelection); // discard new or switch note
                     setModalOpen(false);

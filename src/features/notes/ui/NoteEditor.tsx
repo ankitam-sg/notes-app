@@ -1,6 +1,6 @@
-import Button from "../../../shared/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFloppyDisk, faXmark, faTrash } from "@fortawesome/free-solid-svg-icons";
+import Button from "../../../shared/Button";
 
 type NoteEditorProps = {
     title: string;

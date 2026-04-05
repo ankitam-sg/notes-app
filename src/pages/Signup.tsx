@@ -1,8 +1,10 @@
 import { useState, ChangeEvent, SyntheticEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+
+import { login as loginAction } from "../features/auth/authSlice";
 import InputField from "../shared/InputField";
 import Button from "../shared/Button";
-
 
 // Form types
 type SignupForm = {
@@ -33,6 +35,7 @@ export default function Signup() {
     const [touched, setTouched] = useState<FormTouched>(initialTouched);
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     // Validation rules
     const validationRules: { [K in keyof SignupForm]: ((value: string) => string)[] } = {
@@ -82,39 +85,9 @@ export default function Signup() {
         const isValid = Object.values(newErrors).every((err) => err === "");
 
         if (isValid) {
-            // Save user in localStorage
-            const storedUsersRaw = localStorage.getItem("users");
-            const storedUsers = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+            dispatch(loginAction({ email: formData.email }));
 
-            if (!Array.isArray(storedUsers)) {
-                console.error("Users are corrupted: ", storedUsers);
-                return;
-            }
-
-            // Check if User already exists
-            const userExists = storedUsers.find(
-                (user: {email: string}) => user.email === formData.email
-            );
-
-            if (userExists) {
-                setErrors((prev) => ({
-                    ...prev,
-                    email: "User already exists with this email.",
-                }));
-
-                return;
-            }
-
-            // Store new user
-            storedUsers.push({email: formData.email, password: formData.password});
-            localStorage.setItem("users", JSON.stringify(storedUsers));
-
-            // Fake token + current user
-            const fakeToken = Math.random().toString(36).substring(2);
-            localStorage.setItem("authToken", fakeToken);
-            localStorage.setItem("currentUser", JSON.stringify({ email: formData.email }));
-
-            // Reset
+            // Reset form
             setFormData(initialForm);
             setErrors(initialErrors);
             setTouched(initialTouched);
