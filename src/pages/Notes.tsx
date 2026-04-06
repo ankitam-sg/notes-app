@@ -26,7 +26,7 @@ export default function Notes() {
     
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const user = useSelector((state: RootState) => state.auth.user);
+    const user = useSelector((state: RootState) => state.auth.currentUser);
 
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [title, setTitle] = useState("");

@@ -1,10 +1,10 @@
-import { useState, ChangeEvent, SyntheticEvent } from "react";
+import { ChangeEvent, SyntheticEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-
-import { login as loginAction } from "../features/auth/authSlice";
+import { useDispatch, useSelector } from "react-redux";
 import InputField from "../shared/InputField";
 import Button from "../shared/Button";
+import { clearErrors, signup } from "../features/auth/authSlice";
+import type { RootState, AppDispatch } from "../store/store";
 
 // Form types
 type SignupForm = {
@@ -35,7 +35,10 @@ export default function Signup() {
     const [touched, setTouched] = useState<FormTouched>(initialTouched);
 
     const navigate = useNavigate();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
+
+    // ✅ Access existing users from redux
+    const users = useSelector((state: RootState) => state.auth.users);
 
     // Validation rules
     const validationRules: { [K in keyof SignupForm]: ((value: string) => string)[] } = {
@@ -50,7 +53,6 @@ export default function Signup() {
         ],
     };
 
-    // Validate a single field
     const validateField = (name: keyof SignupForm, value: string): string => {
         const rules = validationRules[name] || [];
         for (const rule of rules) {
@@ -68,6 +70,8 @@ export default function Signup() {
 
         const errorMsg = validateField(name as keyof SignupForm, value);
         setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+
+        dispatch(clearErrors()); // ❌ clear previous login/signup errors
     };
 
     const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
@@ -83,17 +87,27 @@ export default function Signup() {
         setTouched({ email: true, password: true, confirmPassword: true });
 
         const isValid = Object.values(newErrors).every((err) => err === "");
+        if (!isValid) return;
 
-        if (isValid) {
-            dispatch(loginAction({ email: formData.email }));
-
-            // Reset form
-            setFormData(initialForm);
-            setErrors(initialErrors);
-            setTouched(initialTouched);
-
-            navigate("/notes");
+        // ✅ Check if user already exists
+        const userExists = users.find((u) => u.email === formData.email);
+        if (userExists) {
+            setErrors((prev) => ({
+                ...prev,
+                email: "User already exists with this email.",
+            }));
+            return;
         }
+
+        // ✅ Dispatch signup to redux
+        dispatch(signup({ email: formData.email, password: formData.password }));
+
+        // ✅ Reset form
+        setFormData(initialForm);
+        setErrors(initialErrors);
+        setTouched(initialTouched);
+
+        navigate("/notes");
     };
 
     return (
@@ -110,7 +124,6 @@ export default function Signup() {
                         placeholder="Enter Email"
                         value={formData.email}
                         onChange={handleChange}
-                        // FIX
                         error={touched.email ? errors.email : undefined}
                     />
 
@@ -122,7 +135,6 @@ export default function Signup() {
                         placeholder="Enter Password"
                         value={formData.password}
                         onChange={handleChange}
-                        // FIX
                         error={touched.password ? errors.password : undefined}
                     />
 
@@ -134,7 +146,6 @@ export default function Signup() {
                         placeholder="Enter Confirm Password"
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        // FIX
                         error={touched.confirmPassword ? errors.confirmPassword : undefined}
                     />
 

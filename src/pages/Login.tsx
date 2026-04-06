@@ -1,12 +1,12 @@
-import { useState, ChangeEvent, SyntheticEvent } from "react";
+import { ChangeEvent, SyntheticEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-
-import { login as loginAction } from "../features/auth/authSlice";
+import { useDispatch, useSelector } from "react-redux";
 import InputField from "../shared/InputField";
 import Button from "../shared/Button";
+import { login as loginAction } from "../features/auth/authSlice";
+import type { RootState, AppDispatch } from "../store/store";
 
-// Define the shape of the form data
+// Form types
 type LoginForm = {
     email: string;
     password: string;
@@ -23,7 +23,7 @@ type FormTouched = {
 };
 
 export default function Login() {
-    // Initial values
+    // ✅ Initial form + errors + touched
     const initialForm: LoginForm = { email: "", password: "" };
     const initialErrors: FormErrors = { email: "", password: "" };
     const initialTouched: FormTouched = { email: false, password: false };
@@ -33,19 +33,21 @@ export default function Login() {
     const [touched, setTouched] = useState<FormTouched>(initialTouched);
 
     const navigate = useNavigate();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
 
-    // Validation rules for each field
+    // ✅ Access users from redux
+    const users = useSelector((state: RootState) => state.auth.users);
+
+    // Validation rules
     const validationRules: { [K in keyof LoginForm]: ((value: string) => string)[] } = {
         email: [(value) => (value === "" ? "Email is required." : "")],
         password: [
             (value) => (value === "" ? "Password is required." : ""),
-            (value) =>
-                value.length < 6 ? "Password must be at least 6 characters." : "",
+            (value) => (value.length < 6 ? "Password must be at least 6 characters." : ""),
         ],
     };
 
-    // Validate a single field
+    // ✅ Validate single field
     const validateField = (name: keyof LoginForm, value: string): string => {
         const rules = validationRules[name] || [];
         for (const rule of rules) {
@@ -55,7 +57,7 @@ export default function Login() {
         return "";
     };
 
-    // Handle input change
+    // ✅ Handle input change
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
 
@@ -66,11 +68,11 @@ export default function Login() {
         setErrors((prev) => ({ ...prev, [name]: errorMsg }));
     };
 
-    // Handle form submit
+    // ✅ Handle form submit
     const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        // Validate all fields
+        // ✅ Validate all fields first
         const newErrors: FormErrors = {
             email: validateField("email", formData.email),
             password: validateField("password", formData.password),
@@ -80,17 +82,40 @@ export default function Login() {
         setTouched({ email: true, password: true });
 
         const isValid = Object.values(newErrors).every((err) => err === "");
+        if (!isValid) return;
 
-        if (isValid) {
-            dispatch(loginAction({ email: formData.email }));
+        // ✅ Find user in redux store
+        const user = users.find((u) => u.email === formData.email);
 
-            // Reset form
-            setFormData(initialForm);
-            setErrors(initialErrors);
-            setTouched(initialTouched);
-
-            navigate("/notes");
+        if (!user) {
+            // ❌ USER NOT FOUND -> only email error
+            setErrors((prev) => ({
+                ...prev,
+                email: "User not found. Please Sign up first.",
+                password: "", // reset password error
+            }));
+            return;
         }
+
+        if (user.password !== formData.password) {
+            // ❌ WRONG PASSWORD -> only password error
+            setErrors((prev) => ({
+                ...prev,
+                email: "", // reset email error
+                password: "Incorrect Password.",
+            }));
+            return;
+        }
+
+        // ✅ SUCCESS LOGIN
+        dispatch(loginAction({ email: formData.email, password: formData.password }));
+
+        // ✅ Reset form
+        setFormData(initialForm);
+        setErrors(initialErrors);
+        setTouched(initialTouched);
+
+        navigate("/notes");
     };
 
     return (
@@ -107,7 +132,6 @@ export default function Login() {
                         placeholder="Enter Email"
                         value={formData.email}
                         onChange={handleChange}
-                        // FIX: Avoid boolean (false) → return string | undefined
                         error={touched.email ? errors.email : undefined}
                     />
 
@@ -119,11 +143,10 @@ export default function Login() {
                         placeholder="Enter Password"
                         value={formData.password}
                         onChange={handleChange}
-                        // FIX applied here as well
                         error={touched.password ? errors.password : undefined}
                     />
 
-                    <Button text="Login" variant="primary" type="submit" className="w-full"/>
+                    <Button text="Login" variant="primary" type="submit" className="w-full" />
                 </form>
 
                 <p className="text-center text-sm mt-2">
