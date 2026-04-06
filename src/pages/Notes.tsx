@@ -14,24 +14,37 @@ import { RootState } from "../store/store";
 import { addNote, updateNote, deleteNote, setSearchTerm } from "../features/notes/notesSlice";
 import { logout } from "../features/auth/authSlice";
 
+// ✅ UPDATED: Note now includes userEmail (required for per-user notes)
 type Note = {
     id: string;
     title: string;
     content: string;
+    userEmail: string; // ✅ NEW: bind note to logged-in user
 };
 
 export default function Notes() {
-    const notes = useSelector((state: RootState) => state.notes.notes);
+
+    // ✅ Get current logged-in user
+    const user = useSelector((state: RootState) => state.auth.currentUser);
+
+    // ❌ OLD: was showing all notes
+    // ✅ NEW: filter notes only for current user
+    const notes = useSelector((state: RootState) =>
+        state.notes.notes.filter((note) => note.userEmail === user?.email)
+    );
+
     const searchTerm = useSelector((state: RootState) => state.notes.searchTerm);
     
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const user = useSelector((state: RootState) => state.auth.currentUser);
 
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+
+    // ✅ UPDATED: originalNote must also include userEmail
     const [originalNote, setOriginalNote] = useState<Note | null>(null);
+
     const [isCreating, setIsCreating] = useState(false);
 
     // modal & pending state
@@ -88,14 +101,25 @@ export default function Notes() {
         if (selectedNoteId) {
             // UPDATE
             dispatch(updateNote({ id: selectedNoteId, title, content }));
-            setOriginalNote({ id: selectedNoteId, title, content });
+
+            // ✅ FIX: include userEmail in originalNote
+            setOriginalNote({
+                id: selectedNoteId,
+                title,
+                content,
+                userEmail: user!.email
+            });
         } else {
             // CREATE
+            if (!user) return; // safety
+
             const newNote: Note = {
                 id: crypto.randomUUID(),
                 title,
-                content
+                content,
+                userEmail: user.email // ✅ attach note to user
             };
+
             dispatch(addNote(newNote));
         }
 
@@ -242,14 +266,13 @@ export default function Notes() {
 
                 onConfirm={() => {
                     if (pendingDelete && selectedNoteId) {
-                        // delete existing note
                         dispatch(deleteNote(selectedNoteId));
                     }
-                    applySelection(pendingSelection); // discard new or switch note
+                    applySelection(pendingSelection);
                     setModalOpen(false);
                     setPendingSelection(null);
                     setPendingDelete(false);
-                    handleClose(); // close editor if discard
+                    handleClose();
                 }}
 
                 onCancel={() => {

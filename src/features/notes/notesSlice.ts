@@ -1,16 +1,20 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+// Note type
 type Note = {
     id: string;
     title: string;
     content: string;
-};
+    userEmail: string; // Each note belongs to a user
+    };
 
+// Notes state type
 type NotesState = {
     notes: Note[];
-    searchTerm: string; 
+    searchTerm: string;
 };
 
+// Initial state
 const initialState: NotesState = {
     notes: [],
     searchTerm: "",
@@ -20,37 +24,50 @@ const notesSlice = createSlice({
     name: "notes",
     initialState,
     reducers: {
-        addNote: (state, action: PayloadAction<Note>) => {
-            state.notes.unshift(action.payload);
+        // Add new note with user association
+        addNote: (
+            state,
+            action: PayloadAction<{
+                id: string;
+                title: string;
+                content: string;
+                userEmail: string; // current user
+            }>
+        ) => {
+            // Add new note with userEmail to associate it with the logged-in user
+            state.notes.push(action.payload);
         },
 
-        updateNote: (state, action: PayloadAction<Note>) => {
-            const index = state.notes.findIndex(
-                (note) => note.id === action.payload.id
-            );
+        // Update Note by ID 
+        updateNote: (
+            state,
+            action: PayloadAction<{
+                id: string;
+                title: string;
+                content: string;
+            }>
+        ) => {
+            const note = state.notes.find((n) => n.id === action.payload.id);
 
-            // If the note exists (index is not -1), update it
-            if (index !== -1) {
-                state.notes[index] = action.payload;
+            if (note) {
+                // Only updating content, userEmail stays same
+                note.title = action.payload.title;
+                note.content = action.payload.content;
             }
         },
-        
+
+        // Delete note by ID
         deleteNote: (state, action: PayloadAction<string>) => {
-            state.notes = state.notes.filter(
-                (note) => note.id !== action.payload
-            );
+            // Remove the note with the given ID from the state
+            state.notes = state.notes.filter((n) => n.id !== action.payload);
         },
 
-        // Read operation like fetching notes (persist)
-        setNotes: (state, action: PayloadAction<Note[]>) => {
-            state.notes = action.payload;
-        },
-
+        // Search term for filtering notes in UI
         setSearchTerm: (state, action: PayloadAction<string>) => {
             state.searchTerm = action.payload;
-        }
+        },
     },
 });
 
-export const { addNote, updateNote, deleteNote, setNotes, setSearchTerm } = notesSlice.actions;
+export const { addNote, updateNote, deleteNote, setSearchTerm } = notesSlice.actions;
 export default notesSlice.reducer;
